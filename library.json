@@ -1,0 +1,16 @@
+{
+  "name": "Muses72320",
+  "keywords": "audio",
+  "description": "Arduino libary for the audio chip Muses 72320",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qhris/Muses72320"
+  },
+  "version": "0.1",
+  "exclude": [
+    "*.png",
+    "*.zip"
+  ],
+  "frameworks": "arduino",
+  "platforms": "*"
+}
