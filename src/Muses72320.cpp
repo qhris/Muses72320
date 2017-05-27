@@ -1,24 +1,24 @@
 /*
-  The MIT License (MIT)
+The MIT License (MIT)
 
-  Copyright (c) 2016 Christoffer Hjalmarsson
+Copyright (c) 2016 Christoffer Hjalmarsson
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy of
-  this software and associated documentation files (the "Software"), to deal in
-  the Software without restriction, including without limitation the rights to
-  use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-  the Software, and to permit persons to whom the Software is furnished to do so,
-  subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-  FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-  COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-  IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "Muses72320.h"
@@ -52,7 +52,7 @@ static inline data_t volume_to_attenuation(volume_t volume)
 	// |    0.0 dB | in: [  0] -> 0b00010000 |
 	// | -111.5 dB | in: [223] -> 0b11101111 |
 	// #=====================================#
-	return static_cast<data_t>(min(-volume, 223) + 0x10);
+	return static_cast<data_t>(constrain(-volume, 0, 223) + 0x10);
 }
 
 static inline data_t volume_to_gain(volume_t gain)
@@ -62,18 +62,18 @@ static inline data_t volume_to_gain(volume_t gain)
 	// |     0 dB | in: [ 0] -> 0b00000000 |
 	// | +31.5 dB | in: [63] -> 0b01111111 |
 	// #===================================#
-	return static_cast<data_t>(min(gain, 63));
+	return static_cast<data_t>(constrain(gain, 0, 63));
 }
 
 Self::Muses72320(address_t chip_address) :
-		chip_address(chip_address & 0b0111),
-		states(0)
+	chip_address(chip_address & 0b0111),
+	states(0)
 { }
 
 void Self::begin()
 {
-  pinMode(s_slave_select_pin, OUTPUT);
-  SPI.begin();
+	pinMode(s_slave_select_pin, OUTPUT);
+	SPI.begin();
 }
 
 void Self::setVolume(volume_t lch, volume_t rch)
@@ -102,12 +102,12 @@ void Self::setGain(volume_t lch, volume_t rch)
 
 void Self::mute()
 {
-  if (bitRead(states, s_state_bit_attenuation)) {
-    transfer(s_control_attenuation_l, 0);
-  } else {
-    transfer(s_control_attenuation_l, 0);
-    transfer(s_control_attenuation_r, 0);
-  }
+	if (bitRead(states, s_state_bit_attenuation)) {
+		transfer(s_control_attenuation_l, 0);
+	} else {
+		transfer(s_control_attenuation_l, 0);
+		transfer(s_control_attenuation_r, 0);
+	}
 }
 
 void Self::setZeroCrossing(bool enabled)
@@ -133,10 +133,10 @@ void Self::setGainLink(bool enabled)
 
 void Self::transfer(address_t address, data_t data)
 {
-  SPI.beginTransaction(s_muses_spi_settings);
-  digitalWrite(s_slave_select_pin, LOW);
-  SPI.transfer(data);
-  SPI.transfer(address | chip_address);
-  digitalWrite(s_slave_select_pin, HIGH);
-  SPI.endTransaction();
+	SPI.beginTransaction(s_muses_spi_settings);
+	digitalWrite(s_slave_select_pin, LOW);
+	SPI.transfer(data);
+	SPI.transfer(address | chip_address);
+	digitalWrite(s_slave_select_pin, HIGH);
+	SPI.endTransaction();
 }

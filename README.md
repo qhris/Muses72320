@@ -1,6 +1,7 @@
 # Muses 72320
 
-Arduino library for communicating with the Muses 72320 audio chip.
+Arduino library for communicating with the Muses 72320 volume control IC.
+
 The data sheets can be found [here](http://www.njr.com/semicon/PDF/MUSES72320_E.pdf) (pdf).
 
 ## Download
@@ -35,8 +36,7 @@ void setup()
 void loop()
 {
   CurrentVolume -= 1;
-  if (CurrentVolume < -223)
-  {
+  if (CurrentVolume < -223) {
     CurrentVolume = 0;
   }
 
@@ -54,4 +54,4 @@ Please post any problems on the [Issues](https://github.com/qhris/Muses72320/iss
 
 ## License
 
-Please read over the LICENSE file included in the project.
+MIT. Please read over the LICENSE file included in the project.
