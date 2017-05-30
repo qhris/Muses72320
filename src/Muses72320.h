@@ -24,6 +24,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define INCLUDED_MUSES_72320
 
 #include <Arduino.h>
+#include "MusesTypes.h"
 
 /**
  * The Muses72320 IC.
@@ -34,9 +35,9 @@ class Muses72320
 {
 public:
 	// contextual data types.
-	typedef uint8_t data_t;
-	typedef int16_t volume_t;
-	typedef uint8_t address_t;
+	using data_t = MusesTypes::data_t;
+	using volume_t = MusesTypes::volume_t;
+	using address_t = MusesTypes::address_t;
 
 	/**
 	 * Creates a new chip which can be controlled on a specific chip address.
@@ -128,7 +129,7 @@ public:
 	 *
 	 * @param enabled Sets gain to 0.25dB if set, or to 0dB if not.
 	 */
-	void setFineGain(bool enabled)
+	void setFineGain(bool enabled);
 
 	// gain is constrained to [0, 31.5].
 	// input goes from 0 to 63.

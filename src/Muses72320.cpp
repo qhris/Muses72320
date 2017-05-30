@@ -20,15 +20,12 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-
+#include "utility/VolumeConversion.hpp"
 #include "Muses72320.h"
+
 #include <SPI.h>
 
 typedef Muses72320 Self;
-
-// pass through some types into global scope.
-using data_t = Self::data_t;
-using volume_t = Self::volume_t;
 
 // control select addresses, chip address (low 4) ignored.
 static const data_t s_control_attenuation_l = 0b00000000;
@@ -44,16 +41,6 @@ static const data_t s_state_bit_attenuation   = 7;
 
 static const int s_slave_select_pin = 10;
 static const SPISettings s_muses_spi_settings(250000, MSBFIRST, SPI_MODE2);
-
-static inline data_t volume_to_attenuation(volume_t volume)
-{
-	// volume to attenuation data conversion:
-	// #=====================================#
-	// |    0.0 dB | in: [  0] -> 0b00010000 |
-	// | -111.5 dB | in: [223] -> 0b11101111 |
-	// #=====================================#
-	return static_cast<data_t>(constrain(-volume, 0, 223) + 0x10);
-}
 
 static inline data_t volume_to_gain(volume_t gain)
 {
@@ -100,13 +87,13 @@ void Self::setGain(volume_t lch, volume_t rch)
 	}
 }
 
-void Self::mute()
+void Self::mute(bool left, bool right)
 {
 	if (bitRead(states, s_state_bit_attenuation)) {
-		transfer(s_control_attenuation_l, 0);
+		if (left)  transfer(s_control_attenuation_l, 0);
 	} else {
-		transfer(s_control_attenuation_l, 0);
-		transfer(s_control_attenuation_r, 0);
+		if (left)  transfer(s_control_attenuation_l, 0);
+		if (right) transfer(s_control_attenuation_r, 0);
 	}
 }
 
