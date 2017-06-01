@@ -59,11 +59,29 @@ void Self::setVolume(volume_t lch, volume_t rch)
 		// interconnected left and right channels.
 		const auto controlData = VolumeControlDataFactory::fromVolume(lch);
 		transfer(s_control_attenuation_l, controlData.getAttenuation());
+		transfer(s_control_gain_l, controlData.getGain());
 	} else {
 		// independent left and right channels.
 		const auto controlDataL = VolumeControlDataFactory::fromVolume(lch);
 		transfer(s_control_attenuation_l, controlDataL.getAttenuation());
+		transfer(s_control_gain_l, controlDataL.getGain());
 		const auto controlDataR = VolumeControlDataFactory::fromVolume(rch);
+		transfer(s_control_attenuation_r, controlDataR.getAttenuation());
+		transfer(s_control_gain_r, controlDataR.getGain());
+	}
+}
+
+void Self::setAttenuation(volume_t lch, volume_t rch)
+{
+	if (bitRead(states, s_state_bit_attenuation)) {
+		// interconnected left and right channels.
+		const auto controlData = VolumeControlDataFactory::fromAttenuation(lch);
+		transfer(s_control_attenuation_l, controlData.getAttenuation());
+	} else {
+		// independent left and right channels.
+		const auto controlDataL = VolumeControlDataFactory::fromAttenuation(lch);
+		transfer(s_control_attenuation_l, controlDataL.getAttenuation());
+		const auto controlDataR = VolumeControlDataFactory::fromAttenuation(rch);
 		transfer(s_control_attenuation_r, controlDataR.getAttenuation());
 	}
 }

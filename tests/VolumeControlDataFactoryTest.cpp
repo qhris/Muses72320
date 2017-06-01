@@ -5,6 +5,8 @@
 static const data_t ATTENUATION_DATA_ZERO = 0b10000;
 // Gain control data for zero gain (+0dB).
 static const data_t GAIN_DATA_ZERO = 0b0;
+// Fain gain control data (+0.25dB).
+static const data_t GAIN_DATA_FINE = 0b1000000;
 
 TEST_CASE("Factory creates correct attenuation control data for attenuation values.", "[VolumeControlDataFactory]")
 {
@@ -51,4 +53,41 @@ TEST_CASE("Factory creates control data with zero attenuation for gain.", "[Volu
 {
 	REQUIRE(VolumeControlDataFactory::fromGain(1).getAttenuation() == ATTENUATION_DATA_ZERO);
 	REQUIRE(VolumeControlDataFactory::fromGain(63).getAttenuation() == ATTENUATION_DATA_ZERO);
+}
+
+TEST_CASE("Factory creates control data with corrects values for fine gain.", "[VolumeControlDataFactory]")
+{
+	const auto controlData = VolumeControlDataFactory::fromFineGain();
+	REQUIRE(controlData.getAttenuation() == ATTENUATION_DATA_ZERO);
+	REQUIRE(controlData.getGain() == GAIN_DATA_FINE);
+}
+
+TEST_CASE("Factory creates correct attenuation and gain values for volume.", "[VolumeControlDataFactory]")
+{
+	REQUIRE(VolumeControlDataFactory::fromVolume(0).getAttenuation() == ATTENUATION_DATA_ZERO);
+	REQUIRE(VolumeControlDataFactory::fromVolume(0).getGain() == GAIN_DATA_ZERO);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-1).getAttenuation() == 0b10001);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-1).getGain() == GAIN_DATA_FINE);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-2).getAttenuation() == 0b10001);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-2).getGain() == GAIN_DATA_ZERO);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-3).getAttenuation() == 0b10010);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-3).getGain() == GAIN_DATA_FINE);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-445).getAttenuation() == 0b11101111);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-445).getGain() == GAIN_DATA_FINE);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-446).getAttenuation() == 0b11101111);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-446).getGain() == GAIN_DATA_ZERO);
+}
+
+TEST_CASE("Factory clamps volume within the correct range.", "[VolumeControlDataFactory]")
+{
+	REQUIRE(VolumeControlDataFactory::fromVolume(1).getAttenuation() == ATTENUATION_DATA_ZERO);
+	REQUIRE(VolumeControlDataFactory::fromVolume(1).getGain() == GAIN_DATA_ZERO);
+
+	REQUIRE(VolumeControlDataFactory::fromVolume(-447).getAttenuation() == 0b11101111);
+	REQUIRE(VolumeControlDataFactory::fromVolume(-447).getGain() == GAIN_DATA_ZERO);
 }
