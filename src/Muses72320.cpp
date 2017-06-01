@@ -42,16 +42,6 @@ static const data_t s_state_bit_attenuation   = 7;
 static const int s_slave_select_pin = 10;
 static const SPISettings s_muses_spi_settings(250000, MSBFIRST, SPI_MODE2);
 
-static inline data_t volume_to_gain(volume_t gain)
-{
-	// volume to gain data conversion:
-	// #===================================#
-	// |     0 dB | in: [ 0] -> 0b00000000 |
-	// | +31.5 dB | in: [63] -> 0b01111111 |
-	// #===================================#
-	return static_cast<data_t>(constrain(gain, 0, 63));
-}
-
 Self::Muses72320(address_t chip_address) :
 	chip_address(chip_address & 0b0111),
 	states(0)
@@ -82,11 +72,14 @@ void Self::setGain(volume_t lch, volume_t rch)
 {
 	if (bitRead(states, s_state_bit_gain)) {
 		// interconnected left and right channels.
-		transfer(s_control_gain_l, volume_to_gain(lch));
+		const auto controlData = VolumeControlDataFactory::fromGain(lch);
+		transfer(s_control_gain_l, controlData.getGain());
 	} else {
 		// independent left and right channels.
-		transfer(s_control_gain_l, volume_to_gain(lch));
-		transfer(s_control_gain_r, volume_to_gain(rch));
+		const auto controlDataL = VolumeControlDataFactory::fromGain(lch);
+		transfer(s_control_gain_l, controlDataL.getGain());
+		const auto controlDataR = VolumeControlDataFactory::fromGain(rch);
+		transfer(s_control_gain_r, controlDataR.getGain());
 	}
 }
 

@@ -32,10 +32,22 @@ struct VolumeControlDataFactory
         // #=====================================#
         const volume_t clampedAttenuation = Math::clamp<volume_t>(attenuation, -223, 0);
         const data_t attenuationData = static_cast<data_t>(0x10 + Math::abs(clampedAttenuation));
-        return create(attenuationData, 0);
+
+        return create(attenuationData, zeroControlGain());
     }
 
-    static inline VolumeControlData fromGain(const volume_t gain);
+    static inline VolumeControlData fromGain(const volume_t gain)
+    {
+        // volume to gain data conversion:
+        // #===================================#
+        // |     0 dB | in: [ 0] -> 0b00000000 |
+        // | +31.5 dB | in: [63] -> 0b01111111 |
+        // #===================================#
+        const data_t gainData = static_cast<data_t>(Math::clamp<volume_t>(gain, 0, 63));
+
+        return create(zeroControlAttenuation(), gainData);
+    }
+
     static inline VolumeControlData fromFineGain();
     static inline VolumeControlData fromVolume(const volume_t volume)
     {
@@ -43,6 +55,9 @@ struct VolumeControlDataFactory
     }
 
 private:
+    static constexpr data_t zeroControlAttenuation() { return 0b10000; }
+    static constexpr data_t zeroControlGain() { return 0; }
+
     static inline VolumeControlData create(data_t attenuation, data_t gain)
     {
         return VolumeControlData(attenuation, gain);
