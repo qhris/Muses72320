@@ -20,7 +20,7 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#include "utility/VolumeConversion.hpp"
+#include "utility/VolumeControlDataFactory.hpp"
 #include "Muses72320.h"
 
 #include <SPI.h>
@@ -67,11 +67,14 @@ void Self::setVolume(volume_t lch, volume_t rch)
 {
 	if (bitRead(states, s_state_bit_attenuation)) {
 		// interconnected left and right channels.
-		transfer(s_control_attenuation_l, volume_to_attenuation(lch));
+		const auto controlData = VolumeControlDataFactory::fromVolume(lch);
+		transfer(s_control_attenuation_l, controlData.getAttenuation());
 	} else {
 		// independent left and right channels.
-		transfer(s_control_attenuation_l, volume_to_attenuation(lch));
-		transfer(s_control_attenuation_r, volume_to_attenuation(rch));
+		const auto controlDataL = VolumeControlDataFactory::fromVolume(lch);
+		transfer(s_control_attenuation_l, controlDataL.getAttenuation());
+		const auto controlDataR = VolumeControlDataFactory::fromVolume(rch);
+		transfer(s_control_attenuation_r, controlDataR.getAttenuation());
 	}
 }
 
