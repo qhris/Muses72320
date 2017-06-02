@@ -1,11 +1,12 @@
+#include <VolumeControlData.hpp>
 #include <VolumeControlDataFactory.hpp>
 #include <catch/catch.hpp>
 
-// Attenuation control data for zero attenuation (-0dB).
+using namespace MusesTypes;
+
 static const data_t ATTENUATION_DATA_ZERO = 0b10000;
-// Gain control data for zero gain (+0dB).
 static const data_t GAIN_DATA_ZERO = 0b0;
-// Fain gain control data (+0.25dB).
+// The `fine gain` control data allows a special +0.25dB instead of +0.5dB.
 static const data_t GAIN_DATA_FINE = 0b1000000;
 
 TEST_CASE("Factory creates correct attenuation control data for attenuation values.", "[VolumeControlDataFactory]")

@@ -1,28 +1,15 @@
-#ifndef INCLUDED_MUSES_72320_VOLUME_CONVERSION
-#define INCLUDED_MUSES_72320_VOLUME_CONVERSION
+#ifndef INCLUDED_VOLUME_CONTROL_DATA_FACTORY
+#define INCLUDED_VOLUME_CONTROL_DATA_FACTORY
 
 #include "../MusesTypes.h"
 #include "Math.hpp"
-
-using namespace MusesTypes;
-
-class VolumeControlData
-{
-public:
-    VolumeControlData() = delete;
-    VolumeControlData(data_t attenuation, data_t gain) :
-    attenuation(attenuation), gain(gain) { }
-
-    data_t getGain() const { return gain; }
-    data_t getAttenuation() const { return attenuation; }
-
-private:
-    data_t attenuation;
-    data_t gain;
-};
+#include "VolumeControlData.hpp"
 
 struct VolumeControlDataFactory
 {
+    using data_t = MusesTypes::data_t;
+    using volume_t = MusesTypes::volume_t;
+
     static inline VolumeControlData fromAttenuation(const volume_t attenuation)
     {
         // Attenuation to attenuation control data conversion:
@@ -30,7 +17,7 @@ struct VolumeControlDataFactory
         // |    0.0 dB | in: [   0] -> 0b00010000 |
         // | -111.5 dB | in: [-223] -> 0b11101111 |
         // #=====================================#
-        const volume_t clampedAttenuation = Math::clamp<volume_t>(attenuation, -223, 0);
+        const volume_t clampedAttenuation = clampAttenuation(attenuation);
         const data_t attenuationData = static_cast<data_t>(0x10 + Math::abs(clampedAttenuation));
 
         return create(attenuationData, zeroControlGain());
@@ -43,7 +30,7 @@ struct VolumeControlDataFactory
         // |     0 dB | in: [ 0] -> 0b00000000 |
         // | +31.5 dB | in: [63] -> 0b01111111 |
         // #===================================#
-        const data_t gainData = static_cast<data_t>(Math::clamp<volume_t>(gain, 0, 63));
+        const data_t gainData = static_cast<data_t>(clampGain(gain));
 
         return create(zeroControlAttenuation(), gainData);
     }
@@ -61,7 +48,7 @@ struct VolumeControlDataFactory
         // |   -0.25 dB | in: [   1] -> [0b1000000, 0b00010001] |
         // | -111.50 dB | in: [-446] -> [0b0000000, 0b11101111] |
         // #====================================================#
-        const volume_t clampedVolume = Math::clamp<volume_t>(volume, -446, 0);
+        const volume_t clampedVolume = clampVolume(volume);
         const volume_t attenuation = (clampedVolume - 1) / 2;
         const data_t attenuationData = fromAttenuation(attenuation).getAttenuation();
         const data_t gainData = clampedVolume % 2 == 0 ? zeroControlGain() : fineControlGain();
@@ -70,6 +57,21 @@ struct VolumeControlDataFactory
     }
 
 private:
+    static constexpr volume_t clampAttenuation(volume_t attenuation)
+    {
+        return Math::clamp<volume_t>(attenuation, -223, 0);
+    }
+
+    static constexpr volume_t clampGain(volume_t gain)
+    {
+        return Math::clamp<volume_t>(gain, 0, 63);
+    }
+
+    static constexpr volume_t clampVolume(volume_t volume)
+    {
+        return Math::clamp<volume_t>(volume, -446, 0);
+    }
+
     static constexpr data_t zeroControlAttenuation() { return 0b10000; }
     static constexpr data_t zeroControlGain() { return 0; }
     static constexpr data_t fineControlGain() { return 0b1000000; }
@@ -80,4 +82,4 @@ private:
     }
 };
 
-#endif // INCLUDED_MUSES_72320_VOLUME_CONVERSION
+#endif // INCLUDED_VOLUME_CONTROL_DATA_FACTORY

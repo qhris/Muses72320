@@ -20,12 +20,15 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
+#include "utility/VolumeControlData.hpp"
 #include "utility/VolumeControlDataFactory.hpp"
 #include "Muses72320.h"
 
 #include <SPI.h>
 
 typedef Muses72320 Self;
+
+using namespace MusesTypes;
 
 // control select addresses, chip address (low 4) ignored.
 static const data_t s_control_attenuation_l = 0b00000000;
