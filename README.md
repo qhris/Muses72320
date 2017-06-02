@@ -41,7 +41,6 @@ void loop()
   }
 
   Muses.setVolume(CurrentVolume);
-  // Equivalent to 'Muses.setVolume(CurrentVolume, CurrentVolume)' for L/R ch.
 
   delay(10);
 }
