@@ -42,7 +42,7 @@ public:
 	/**
 	 * Creates a new chip which can be controlled on a specific chip address.
 	 */
-	Muses72320(address_t chip_address);
+	Muses72320(address_t chipAddress);
 
 	/**
 	 * Initializes the pin modes to enable communication with the chip.
@@ -81,7 +81,7 @@ public:
 	 *
 	 * @param volume Left and right channel volume. Range: [-446, 0].
 	 */
-	inline void setVolume(volume_t volume) { setVolume(volume, volume); }
+	void setVolume(volume_t volume) { setVolume(volume, volume); }
 
 	/**
 	 * Direct attenuation control of the chip only allowing 0.5dB steps.
@@ -117,7 +117,7 @@ public:
 	 * @param left  Left channel attenuation. Range: [-223, 0].
 	 * @param right Right channel attenuation. Range: [-223, 0].
 	 */
-	inline void setAttenuation(volume_t attenuation)
+	void setAttenuation(volume_t attenuation)
 		{ setAttenuation(attenuation, attenuation); }
 
 	/**
@@ -165,7 +165,7 @@ public:
 	 *
 	 * @param gain Left and right channel gain control. Range: [0, 63].
 	 */
-	inline void setGain(volume_t volume) { setGain(volume, volume); }
+	void setGain(volume_t volume) { setGain(volume, volume); }
 
 	/**
 	 * Mutes the left or right channel.
@@ -180,7 +180,7 @@ public:
 	 * Mutes the left and right channel.
 	 * Call setGain(), setAttenuation() or setVolume() to unmute.
 	 */
-	inline void mute() { mute(true, true); }
+	void mute() { mute(true, true); }
 
 	/**
 	 * Enable or disable zero crossing. Defaults to enabled.
@@ -215,12 +215,23 @@ public:
 	 */
 	void setGainLink(bool enabled);
 
-private:
-	void transfer(address_t address, data_t data);
+	bool isAttenuationLinked() const;
+	bool isGainLinked() const;
 
 private:
-	// for multiple chips on the same bus line.
-	address_t chip_address;
+	void setVolumeLeft(volume_t volume);
+	void setVolumeRight(volume_t volume);
+	void setAttenuationLeft(volume_t attenuation);
+	void setAttenuationRight(volume_t attenuation);
+	void setGainLeft(volume_t gain);
+	void setGainRight(volume_t gain);
+	void muteLeft();
+	void muteRight();
+
+	void transfer(address_t selectAddress, data_t data);
+
+private:
+	address_t chipAddress;
 
 	// muses state bits:
 	//	 7:     link l/r attenuation

@@ -30,12 +30,14 @@ typedef Muses72320 Self;
 
 using namespace MusesTypes;
 
-// control select addresses, chip address (low 4) ignored.
-static const data_t s_control_attenuation_l = 0b00000000;
-static const data_t s_control_attenuation_r = 0b00100000;
-static const data_t s_control_gain_l        = 0b00010000;
-static const data_t s_control_gain_r        = 0b00110000;
-static const data_t s_control_states        = 0b01000000;
+namespace ControlSelectAddress
+{
+	constexpr data_t ATTENUATION_L() { return 0b0000 << 4; }
+	constexpr data_t ATTENUATION_R() { return 0b0010 << 4; }
+	constexpr data_t GAIN_L() { return 0b0001 << 4; }
+	constexpr data_t GAIN_R() { return 0b0011 << 4; }
+	constexpr data_t STATE() { return 0b0100 << 4; }
+}
 
 // control state bits.
 static const data_t s_state_bit_zero_crossing = 5;
@@ -45,8 +47,8 @@ static const data_t s_state_bit_attenuation   = 7;
 static const int s_slave_select_pin = 10;
 static const SPISettings s_muses_spi_settings(250000, MSBFIRST, SPI_MODE2);
 
-Self::Muses72320(address_t chip_address) :
-	chip_address(chip_address & 0b0111),
+Self::Muses72320(address_t chipAddress) :
+	chipAddress(chipAddress & 0b0111),
 	states(0)
 { }
 
@@ -58,89 +60,116 @@ void Self::begin()
 
 void Self::setVolume(volume_t lch, volume_t rch)
 {
-	if (bitRead(states, s_state_bit_attenuation)) {
-		// interconnected left and right channels.
-		const auto controlData = VolumeControlDataFactory::fromVolume(lch);
-		transfer(s_control_attenuation_l, controlData.getAttenuation());
-		transfer(s_control_gain_l, controlData.getGain());
-	} else {
-		// independent left and right channels.
-		const auto controlDataL = VolumeControlDataFactory::fromVolume(lch);
-		transfer(s_control_attenuation_l, controlDataL.getAttenuation());
-		transfer(s_control_gain_l, controlDataL.getGain());
-		const auto controlDataR = VolumeControlDataFactory::fromVolume(rch);
-		transfer(s_control_attenuation_r, controlDataR.getAttenuation());
-		transfer(s_control_gain_r, controlDataR.getGain());
-	}
+	setVolumeLeft(lch);
+	setVolumeRight(rch);
 }
 
 void Self::setAttenuation(volume_t lch, volume_t rch)
 {
-	if (bitRead(states, s_state_bit_attenuation)) {
-		// interconnected left and right channels.
-		const auto controlData = VolumeControlDataFactory::fromAttenuation(lch);
-		transfer(s_control_attenuation_l, controlData.getAttenuation());
-	} else {
-		// independent left and right channels.
-		const auto controlDataL = VolumeControlDataFactory::fromAttenuation(lch);
-		transfer(s_control_attenuation_l, controlDataL.getAttenuation());
-		const auto controlDataR = VolumeControlDataFactory::fromAttenuation(rch);
-		transfer(s_control_attenuation_r, controlDataR.getAttenuation());
-	}
+	setAttenuationLeft(lch);
+	setAttenuationRight(rch);
 }
 
 void Self::setGain(volume_t lch, volume_t rch)
 {
-	if (bitRead(states, s_state_bit_gain)) {
-		// interconnected left and right channels.
-		const auto controlData = VolumeControlDataFactory::fromGain(lch);
-		transfer(s_control_gain_l, controlData.getGain());
-	} else {
-		// independent left and right channels.
-		const auto controlDataL = VolumeControlDataFactory::fromGain(lch);
-		transfer(s_control_gain_l, controlDataL.getGain());
-		const auto controlDataR = VolumeControlDataFactory::fromGain(rch);
-		transfer(s_control_gain_r, controlDataR.getGain());
-	}
+	setGainLeft(lch);
+	setGainRight(rch);
 }
 
 void Self::mute(bool left, bool right)
 {
-	if (bitRead(states, s_state_bit_attenuation)) {
-		if (left)  transfer(s_control_attenuation_l, 0);
-	} else {
-		if (left)  transfer(s_control_attenuation_l, 0);
-		if (right) transfer(s_control_attenuation_r, 0);
-	}
+	if (left) muteLeft();
+	if (right) muteRight();
+}
+
+void Self::setVolumeLeft(volume_t volume)
+{
+	const auto controlData = VolumeControlDataFactory::fromVolume(volume);
+	transfer(ControlSelectAddress::ATTENUATION_L(), controlData.getAttenuation());
+	transfer(ControlSelectAddress::GAIN_L(), controlData.getGain());
+}
+
+void Self::setVolumeRight(volume_t volume)
+{
+	const auto controlData = VolumeControlDataFactory::fromVolume(volume);
+	if (!isAttenuationLinked())
+		transfer(ControlSelectAddress::ATTENUATION_R(), controlData.getAttenuation());
+	if (!isGainLinked())
+		transfer(ControlSelectAddress::GAIN_R(), controlData.getGain());
+}
+
+bool Self::isAttenuationLinked() const
+{
+	return bitRead(states, s_state_bit_attenuation);
+}
+
+bool Self::isGainLinked() const
+{
+	return bitRead(states, s_state_bit_gain);
+}
+
+void Self::setAttenuationLeft(volume_t attenuation)
+{
+	const auto controlData = VolumeControlDataFactory::fromAttenuation(attenuation);
+	transfer(ControlSelectAddress::ATTENUATION_L(), controlData.getAttenuation());
+}
+
+void Self::setAttenuationRight(volume_t attenuation)
+{
+	if (isAttenuationLinked()) return;
+	const auto controlData = VolumeControlDataFactory::fromAttenuation(attenuation);
+	transfer(ControlSelectAddress::ATTENUATION_R(), controlData.getAttenuation());
+}
+
+void Self::setGainLeft(volume_t gain)
+{
+	const auto controlData = VolumeControlDataFactory::fromGain(gain);
+	transfer(ControlSelectAddress::GAIN_L(), controlData.getGain());
+}
+
+void Self::setGainRight(volume_t gain)
+{
+	if (isGainLinked()) return;
+	const auto controlData = VolumeControlDataFactory::fromGain(gain);
+	transfer(ControlSelectAddress::GAIN_R(), controlData.getGain());
+}
+
+void Self::muteLeft()
+{
+	transfer(ControlSelectAddress::ATTENUATION_L(), 0);
+}
+
+void Self::muteRight()
+{
+	if (isAttenuationLinked()) return;
+	transfer(ControlSelectAddress::ATTENUATION_R(), 0);
 }
 
 void Self::setZeroCrossing(bool enabled)
 {
-	// 0 is enabled, 1 is disabled.
-	bitWrite(states, s_state_bit_zero_crossing, !enabled);
-	transfer(s_control_states, states);
+	const int value = enabled ? LOW : HIGH;
+	bitWrite(states, s_state_bit_zero_crossing, value);
+	transfer(ControlSelectAddress::STATE(), states);
 }
 
 void Self::setAttenuationLink(bool enabled)
 {
-	// 1 is enabled, 0 is disabled.
 	bitWrite(states, s_state_bit_attenuation, enabled);
-	transfer(s_control_states, states);
+	transfer(ControlSelectAddress::STATE(), states);
 }
 
 void Self::setGainLink(bool enabled)
 {
-	// 1 is enabled, 0 is disabled.
 	bitWrite(states, s_state_bit_gain, enabled);
-	transfer(s_control_states, states);
+	transfer(ControlSelectAddress::STATE(), states);
 }
 
-void Self::transfer(address_t address, data_t data)
+void Self::transfer(address_t selectAddress, data_t data)
 {
 	SPI.beginTransaction(s_muses_spi_settings);
 	digitalWrite(s_slave_select_pin, LOW);
 	SPI.transfer(data);
-	SPI.transfer(address | chip_address);
+	SPI.transfer(selectAddress | chipAddress);
 	digitalWrite(s_slave_select_pin, HIGH);
 	SPI.endTransaction();
 }
