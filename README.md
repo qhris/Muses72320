@@ -36,7 +36,7 @@ void setup()
 void loop()
 {
   CurrentVolume -= 1;
-  if (CurrentVolume < -223) {
+  if (CurrentVolume < -446) {
     CurrentVolume = 0;
   }
 

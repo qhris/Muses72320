@@ -42,19 +42,27 @@ public:
 	void begin();
 
 	/**
-	 * Simple attenuation control with 0.25dB steps utilizing the 0.25dB gain.
+	 * Simple volume control with 0.25dB steps utilizing the 0.25dB gain.
 	 *
 	 * Volume control range goes from -111.5dB to 0dB using this function.
 	 * Output dB is calculated as: 0.25dB * volume.
 	 * Input values goes from -446 to 0.
+	 *
+	 * Note that the 0.25dB gain step is used to achieve the precision.
 	 *
 	 * Example:
 	 * Input of    0: -0.25 *   0 =    0.00dB [Max volume without gain]
 	 * Input of -105: -0.25 * 105 =  -26.25dB
 	 * Input of -446: -0.25 * 446 = -111.50dB [Minimum volume]
 	 */
-	void setVolume(volume_t left, volume_t right);
-	void setVolume(volume_t volume) { setVolume(volume, volume); }
+	void setVolume(volume_t volume)
+	{
+		setVolumeLeft(volume);
+		setVolumeRight(volume);
+	}
+
+	void setVolumeLeft(volume_t volume);
+	void setVolumeRight(volume_t volume);
 
 	/**
 	 * Direct attenuation control of the chip only allowing 0.5dB steps.
@@ -69,9 +77,14 @@ public:
 	 * Input of -103: 0.5 * -100 =  -51.5dB
 	 * Input of -223: 0.5 * -223 = -111.5dB [Minumum volume/Max atenuation].
 	 */
-	void setAttenuation(volume_t left, volume_t right);
 	void setAttenuation(volume_t attenuation)
-		{ setAttenuation(attenuation, attenuation); }
+	{
+		setAttenuationLeft(attenuation);
+		setAttenuationRight(attenuation);
+	}
+
+	void setAttenuationLeft(volume_t attenuation);
+	void setAttenuationRight(volume_t attenuation);
 
 	/**
 	 * Direct gain control of the chip with 0.5dB precision.
@@ -85,15 +98,28 @@ public:
 	 * Input of 31: 0.5 * 31 = 15.5dB
 	 * Input of 63: 0.5 * 63 = 31.5dB [Maximum gain.]
 	 */
-	void setGain(volume_t left, volume_t right);
-	void setGain(volume_t volume) { setGain(volume, volume); }
+	void setGain(volume_t gain)
+	{
+		setGainLeft(gain);
+		setGainRight(gain);
+	}
+
+	void setGainLeft(volume_t gain);
+	void setGainRight(volume_t gain);
 
 	/**
-	 * Mutes the left or right channel.
-	 * Call setGain(), setAttenuation() or setVolume() to unmute.
+	 * Mute channels.
+	 * Muting is done using attenuation control data; which means that calling
+	 * `setVolume` or `setAttenuation` is required to unmute.
 	 */
-	void mute(bool left, bool right);
-	void mute() { mute(true, true); }
+	void mute()
+	{
+		muteLeft();
+		muteRight();
+	}
+
+	void muteLeft();
+	void muteRight();
 
 	/**
 	 * Enable or disable zero crossing. Defaults to enabled.
@@ -108,6 +134,7 @@ public:
 	 * also contols the right channel.
 	 */
 	void setAttenuationLink(bool enabled);
+	bool isAttenuationLinked() const;
 
 	/**
 	 * Enables or disables the gain link. Defaults to disabled.
@@ -116,20 +143,9 @@ public:
 	 * also contols the right channel.
 	 */
 	void setGainLink(bool enabled);
-
-	bool isAttenuationLinked() const;
 	bool isGainLinked() const;
 
 private:
-	void setVolumeLeft(volume_t volume);
-	void setVolumeRight(volume_t volume);
-	void setAttenuationLeft(volume_t attenuation);
-	void setAttenuationRight(volume_t attenuation);
-	void setGainLeft(volume_t gain);
-	void setGainRight(volume_t gain);
-	void muteLeft();
-	void muteRight();
-
 	void transfer(address_t selectAddress, data_t data);
 
 private:

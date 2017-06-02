@@ -58,30 +58,6 @@ void Self::begin()
 	SPI.begin();
 }
 
-void Self::setVolume(volume_t lch, volume_t rch)
-{
-	setVolumeLeft(lch);
-	setVolumeRight(rch);
-}
-
-void Self::setAttenuation(volume_t lch, volume_t rch)
-{
-	setAttenuationLeft(lch);
-	setAttenuationRight(rch);
-}
-
-void Self::setGain(volume_t lch, volume_t rch)
-{
-	setGainLeft(lch);
-	setGainRight(rch);
-}
-
-void Self::mute(bool left, bool right)
-{
-	if (left) muteLeft();
-	if (right) muteRight();
-}
-
 void Self::setVolumeLeft(volume_t volume)
 {
 	const auto controlData = VolumeControlDataFactory::fromVolume(volume);
