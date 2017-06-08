@@ -28,28 +28,33 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 typedef Muses72320 Self;
 
+using namespace MusesDetails;
 using namespace MusesTypes;
 
 namespace ControlSelectAddress
 {
-	constexpr data_t ATTENUATION_L() { return 0b0000 << 4; }
-	constexpr data_t ATTENUATION_R() { return 0b0010 << 4; }
-	constexpr data_t GAIN_L() { return 0b0001 << 4; }
-	constexpr data_t GAIN_R() { return 0b0011 << 4; }
-	constexpr data_t STATE() { return 0b0100 << 4; }
+	constexpr address_t ATTENUATION_L() { return 0b0000 << 4; }
+	constexpr address_t ATTENUATION_R() { return 0b0010 << 4; }
+	constexpr address_t GAIN_L() { return 0b0001 << 4; }
+	constexpr address_t GAIN_R() { return 0b0011 << 4; }
+	constexpr address_t STATE() { return 0b0100 << 4; }
 }
 
-// control state bits.
-static const data_t s_state_bit_zero_crossing = 5;
-static const data_t s_state_bit_gain          = 6;
-static const data_t s_state_bit_attenuation   = 7;
+namespace StateControlBits
+{
+	constexpr byte ZERO_CROSSING() { return 5; }
+	constexpr byte GAIN() { return 6; }
+	constexpr byte ATTENUATION() { return 7; }
+}
+
+static byte translateStateControlData(StateControlData stateData);
 
 static const int s_slave_select_pin = 10;
-static const SPISettings s_muses_spi_settings(250000, MSBFIRST, SPI_MODE2);
+static const SPISettings MUSES_SPI_SETTINGS(250000, MSBFIRST, SPI_MODE2);
 
 Self::Muses72320(address_t chipAddress) :
 	chipAddress(chipAddress & 0b0111),
-	states(0)
+	state{ true, false, false }
 { }
 
 void Self::begin()
@@ -72,16 +77,6 @@ void Self::setVolumeRight(volume_t volume)
 		transfer(ControlSelectAddress::ATTENUATION_R(), controlData.getAttenuation());
 	if (!isGainLinked())
 		transfer(ControlSelectAddress::GAIN_R(), controlData.getGain());
-}
-
-bool Self::isAttenuationLinked() const
-{
-	return bitRead(states, s_state_bit_attenuation);
-}
-
-bool Self::isGainLinked() const
-{
-	return bitRead(states, s_state_bit_gain);
 }
 
 void Self::setAttenuationLeft(volume_t attenuation)
@@ -121,31 +116,64 @@ void Self::muteRight()
 	transfer(ControlSelectAddress::ATTENUATION_R(), 0);
 }
 
-void Self::setZeroCrossing(bool enabled)
+void Self::enableZeroCrossing()
 {
-	const int value = enabled ? LOW : HIGH;
-	bitWrite(states, s_state_bit_zero_crossing, value);
-	transfer(ControlSelectAddress::STATE(), states);
+	state.zeroCrossing = true;
+	transferState();
 }
 
-void Self::setAttenuationLink(bool enabled)
+void Self::disableZeroCrossing()
 {
-	bitWrite(states, s_state_bit_attenuation, enabled);
-	transfer(ControlSelectAddress::STATE(), states);
+	state.zeroCrossing = false;
+	transferState();
 }
 
-void Self::setGainLink(bool enabled)
+void Self::enableAttenuationLink()
 {
-	bitWrite(states, s_state_bit_gain, enabled);
-	transfer(ControlSelectAddress::STATE(), states);
+	state.linkAttenuation = true;
+	transferState();
 }
 
-void Self::transfer(address_t selectAddress, data_t data)
+void Self::disableAttenuationLink()
 {
-	SPI.beginTransaction(s_muses_spi_settings);
+	state.linkAttenuation = false;
+	transferState();
+}
+
+void Self::enableGainLink()
+{
+	state.linkGain = true;
+	transferState();
+}
+
+void Self::disableGainLink()
+{
+	state.linkGain = false;
+	transferState();
+}
+
+void Self::transferState()
+{
+	byte data = translateStateControlData(state);
+	transfer(ControlSelectAddress::STATE(), data);
+}
+
+void Self::transfer(address_t selectAddress, byte data)
+{
+	SPI.beginTransaction(MUSES_SPI_SETTINGS);
 	digitalWrite(s_slave_select_pin, LOW);
 	SPI.transfer(data);
 	SPI.transfer(selectAddress | chipAddress);
 	digitalWrite(s_slave_select_pin, HIGH);
 	SPI.endTransaction();
+}
+
+byte translateStateControlData(StateControlData stateData)
+{
+	byte data = 0;
+	bitWrite(data, StateControlBits::ZERO_CROSSING(), stateData.zeroCrossing ? LOW : HIGH);
+	bitWrite(data, StateControlBits::GAIN(), stateData.linkGain ? HIGH : LOW);
+	bitWrite(data, StateControlBits::ATTENUATION(), stateData.linkAttenuation ? HIGH : LOW);
+
+	return data;
 }

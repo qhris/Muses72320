@@ -26,10 +26,19 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <Arduino.h>
 #include "MusesTypes.h"
 
+namespace MusesDetails
+{
+	struct StateControlData
+	{
+		bool zeroCrossing;
+		bool linkGain;
+		bool linkAttenuation;
+	};
+}
+
 class Muses72320
 {
 public:
-	using data_t = MusesTypes::data_t;
 	using volume_t = MusesTypes::volume_t;
 	using address_t = MusesTypes::address_t;
 
@@ -125,7 +134,9 @@ public:
 	 * Enable or disable zero crossing. Defaults to enabled.
 	 * Zero crossing only works if the zero crossing terminal pin is set low.
 	 */
-	void setZeroCrossing(bool enabled);
+	void enableZeroCrossing();
+	void disableZeroCrossing();
+	bool isZeroCrossingEnabled() const { return state.zeroCrossing; }
 
 	/**
 	 * Enables or disables the attenuation link. Defaults to disabled.
@@ -133,8 +144,9 @@ public:
 	 * With attenuation link enabled, controlling the left channel attenuation
 	 * also contols the right channel.
 	 */
-	void setAttenuationLink(bool enabled);
-	bool isAttenuationLinked() const;
+	void enableAttenuationLink();
+	void disableAttenuationLink();
+	bool isAttenuationLinked() const { return state.linkAttenuation; }
 
 	/**
 	 * Enables or disables the gain link. Defaults to disabled.
@@ -142,15 +154,17 @@ public:
 	 * With gain link enabled, controlling the left channel gain
 	 * also contols the right channel.
 	 */
-	void setGainLink(bool enabled);
-	bool isGainLinked() const;
+	void enableGainLink();
+	void disableGainLink();
+	bool isGainLinked() const { return state.linkGain; }
 
 private:
-	void transfer(address_t selectAddress, data_t data);
+	void transferState();
+	void transfer(address_t selectAddress, byte data);
 
 private:
 	address_t chipAddress;
-	data_t states;
+	MusesDetails::StateControlData state;
 };
 
 #endif // INCLUDED_MUSES_72320

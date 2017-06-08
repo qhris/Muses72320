@@ -28,9 +28,9 @@ void setup()
   Muses.setVolume(CurrentVolume);
 
   // These are the default states and could be removed...
-  Muses.setZeroCrossing(true);     // Enable/Disable zero crossing.
-  Muses.setAttenuationLink(false); // Left channel controls both L/R gain channel.
-  Muses.setGainLink(false);        // Left channel controls both L/R attenuation channel.
+  Muses.enableZeroCrossing();
+  Muses.disableAttenuationLink();
+  Muses.disableGainLink();
 }
 
 void loop()
