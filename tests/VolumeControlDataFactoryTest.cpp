@@ -1,5 +1,5 @@
-#include <VolumeControlData.hpp>
-#include <VolumeControlDataFactory.hpp>
+#include <utility/VolumeControlData.hpp>
+#include <utility/VolumeControlDataFactory.hpp>
 #include <catch/catch.hpp>
 
 using namespace MusesTypes;
