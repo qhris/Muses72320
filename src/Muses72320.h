@@ -82,7 +82,6 @@ public:
 	 *
 	 * Example:
 	 * Input of    0: 0.5 *    0 =   0.0dB [Max volume/No attenuation].
-	 * Input of -100: 0.5 * -100 =  -50.0dB
 	 * Input of -103: 0.5 * -100 =  -51.5dB
 	 * Input of -223: 0.5 * -223 = -111.5dB [Minumum volume/Max atenuation].
 	 */
@@ -139,20 +138,14 @@ public:
 	bool isZeroCrossingEnabled() const { return state.zeroCrossing; }
 
 	/**
-	 * Enables or disables the attenuation link. Defaults to disabled.
-	 *
-	 * With attenuation link enabled, controlling the left channel attenuation
-	 * also contols the right channel.
+	 * Enable or disable the L/R channel attenuation link.
 	 */
 	void enableAttenuationLink();
 	void disableAttenuationLink();
 	bool isAttenuationLinked() const { return state.linkAttenuation; }
 
 	/**
-	 * Enables or disables the gain link. Defaults to disabled.
-	 *
-	 * With gain link enabled, controlling the left channel gain
-	 * also contols the right channel.
+	 * Enable or disable the L/R channel gain link.
 	 */
 	void enableGainLink();
 	void disableGainLink();

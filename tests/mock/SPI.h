@@ -1,6 +1,7 @@
 #ifndef MOCK_SPI_HEADER
 #define MOCK_SPI_HEADER
 
+#include <queue>
 #include <Arduino.h>
 
 #define MSBFIRST 1
@@ -12,12 +13,59 @@ struct SPISettings
 	SPISettings(uint32_t, uint8_t, uint8_t) {}
 };
 
-struct SPIClass
+class SPIClass
 {
-	void begin() {}
-	void beginTransaction(const SPISettings&) {}
-	void endTransaction() {}
-	void transfer(byte data) {}
+public:
+	SPIClass() :
+		initialized(false),
+		isTransactionActive(false),
+		writtenBytes()
+	{ }
+
+	void begin()
+	{
+		initialized = true;
+
+		digitalWrite(SCK, LOW);
+		pinMode(SCK, OUTPUT);
+
+		digitalWrite(MOSI, LOW);
+		pinMode(MOSI, OUTPUT);
+
+		digitalWrite(SS, HIGH);
+		pinMode(SS, OUTPUT);
+	}
+
+	void beginTransaction(const SPISettings&)
+	{
+		isTransactionActive = true;
+	}
+
+	void endTransaction()
+	{
+		isTransactionActive = false;
+	}
+
+	void transfer(byte data)
+	{
+		if (isTransactionActive)
+			writtenBytes.push(data);
+	}
+
+	bool isInitialized() const
+	{
+		return initialized;
+	}
+
+	std::queue<byte>& getWrittenBytes()
+	{
+		return writtenBytes;
+	}
+
+private:
+	bool initialized;
+	bool isTransactionActive;
+	std::queue<byte> writtenBytes;
 };
 
 extern SPIClass SPI;
