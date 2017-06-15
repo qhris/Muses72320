@@ -20,8 +20,8 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-#include "utility/VolumeControlData.hpp"
-#include "utility/VolumeControlDataFactory.hpp"
+#include "utility/AudioControlData.hpp"
+#include "utility/AudioControlDataConverter.hpp"
 #include "Muses72320.h"
 
 #include <SPI.h>
@@ -68,44 +68,44 @@ void Self::begin()
 
 void Self::setVolumeLeft(volume_t volume)
 {
-	const auto controlData = VolumeControlDataFactory::fromVolume(volume);
-	transfer(ControlSelectAddress::ATTENUATION_L(), controlData.getAttenuation());
-	transfer(ControlSelectAddress::GAIN_L(), controlData.getGain());
+	const auto audio = AudioControlDataConverter::fromVolume(volume);
+	transfer(ControlSelectAddress::ATTENUATION_L(), audio.getAttenuationData());
+	transfer(ControlSelectAddress::GAIN_L(), audio.getGainData());
 }
 
 void Self::setVolumeRight(volume_t volume)
 {
-	const auto controlData = VolumeControlDataFactory::fromVolume(volume);
+	const auto audio = AudioControlDataConverter::fromVolume(volume);
 	if (!isAttenuationLinked())
-		transfer(ControlSelectAddress::ATTENUATION_R(), controlData.getAttenuation());
+		transfer(ControlSelectAddress::ATTENUATION_R(), audio.getAttenuationData());
 	if (!isGainLinked())
-		transfer(ControlSelectAddress::GAIN_R(), controlData.getGain());
+		transfer(ControlSelectAddress::GAIN_R(), audio.getGainData());
 }
 
 void Self::setAttenuationLeft(volume_t attenuation)
 {
-	const auto controlData = VolumeControlDataFactory::fromAttenuation(attenuation);
-	transfer(ControlSelectAddress::ATTENUATION_L(), controlData.getAttenuation());
+	const auto audio = AudioControlDataConverter::fromAttenuation(attenuation);
+	transfer(ControlSelectAddress::ATTENUATION_L(), audio.getAttenuationData());
 }
 
 void Self::setAttenuationRight(volume_t attenuation)
 {
 	if (isAttenuationLinked()) return;
-	const auto controlData = VolumeControlDataFactory::fromAttenuation(attenuation);
-	transfer(ControlSelectAddress::ATTENUATION_R(), controlData.getAttenuation());
+	const auto audio = AudioControlDataConverter::fromAttenuation(attenuation);
+	transfer(ControlSelectAddress::ATTENUATION_R(), audio.getAttenuationData());
 }
 
 void Self::setGainLeft(volume_t gain)
 {
-	const auto controlData = VolumeControlDataFactory::fromGain(gain);
-	transfer(ControlSelectAddress::GAIN_L(), controlData.getGain());
+	const auto audio = AudioControlDataConverter::fromGain(gain);
+	transfer(ControlSelectAddress::GAIN_L(), audio.getGainData());
 }
 
 void Self::setGainRight(volume_t gain)
 {
 	if (isGainLinked()) return;
-	const auto controlData = VolumeControlDataFactory::fromGain(gain);
-	transfer(ControlSelectAddress::GAIN_R(), controlData.getGain());
+	const auto audio = AudioControlDataConverter::fromGain(gain);
+	transfer(ControlSelectAddress::GAIN_R(), audio.getGainData());
 }
 
 void Self::muteLeft()

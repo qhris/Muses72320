@@ -23,6 +23,13 @@ struct ArduinoMock
 #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
 #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
 
+#ifdef abs
+#undef abs
+#endif
+
+#define abs(x) ((x)>0?(x):-(x))
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+
 inline void pinMode(int pin, int mode)
 {
 	assert(pin < 16);
