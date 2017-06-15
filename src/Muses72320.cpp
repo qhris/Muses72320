@@ -47,6 +47,9 @@ namespace StateControlBits
 	constexpr byte ATTENUATION() { return 7; }
 }
 
+constexpr byte boolToByte(byte x) { return x ? HIGH : LOW; }
+constexpr byte boolToInvertedByte(byte x) { return x ? LOW : HIGH; }
+
 static byte translateStateControlData(StateControlData stateData);
 
 static const int s_slave_select_pin = 10;
@@ -171,9 +174,9 @@ void Self::transfer(address_t selectAddress, byte data)
 byte translateStateControlData(StateControlData stateData)
 {
 	byte data = 0;
-	bitWrite(data, StateControlBits::ZERO_CROSSING(), stateData.zeroCrossing ? LOW : HIGH);
-	bitWrite(data, StateControlBits::GAIN(), stateData.linkGain ? HIGH : LOW);
-	bitWrite(data, StateControlBits::ATTENUATION(), stateData.linkAttenuation ? HIGH : LOW);
+	bitWrite(data, StateControlBits::ZERO_CROSSING(), boolToInvertedByte(stateData.zeroCrossing));
+	bitWrite(data, StateControlBits::GAIN(), boolToByte(stateData.linkGain));
+	bitWrite(data, StateControlBits::ATTENUATION(), boolToByte(stateData.linkAttenuation));
 
 	return data;
 }

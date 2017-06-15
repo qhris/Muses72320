@@ -10,4 +10,14 @@ namespace MusesTypes
 	typedef uint8_t address_t;
 }
 
+namespace MusesDetails
+{
+	struct StateControlData
+	{
+		bool zeroCrossing;
+		bool linkGain;
+		bool linkAttenuation;
+	};
+}
+
 #endif // INCLUDED_MUSES_72320_TYPES

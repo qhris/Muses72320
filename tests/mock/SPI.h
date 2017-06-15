@@ -26,6 +26,8 @@ public:
 	{
 		initialized = true;
 
+		clearByteBuffer();
+
 		digitalWrite(SCK, LOW);
 		pinMode(SCK, OUTPUT);
 
@@ -63,6 +65,12 @@ public:
 	}
 
 private:
+	void clearByteBuffer()
+	{
+		std::queue<byte> empty;
+		std::swap(writtenBytes, empty);
+	}
+
 	bool initialized;
 	bool isTransactionActive;
 	std::queue<byte> writtenBytes;

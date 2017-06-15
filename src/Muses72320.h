@@ -26,16 +26,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <Arduino.h>
 #include "MusesTypes.h"
 
-namespace MusesDetails
-{
-	struct StateControlData
-	{
-		bool zeroCrossing;
-		bool linkGain;
-		bool linkAttenuation;
-	};
-}
-
 class Muses72320
 {
 public:

@@ -2,13 +2,15 @@
 #include <SPI.h>
 
 #include <catch/catch.hpp>
+#include "MusesSPIDataReader.hpp"
 
-static void clearSPIBytes();
-static byte readSPINextByte();
-static byte readSPINextSelectAddressWithSkip();
-static byte readSPINextSelectAddress();
-static byte readSPINextChipAddress();
-static size_t getSPIByteCount();
+static Muses72320 createInitializedDevice(Muses72320::address_t address = 0)
+{
+	Muses72320 device(address);
+	device.begin();
+
+	return device;
+}
 
 TEST_CASE("Correctly sets the default values.", "[Muses72320]")
 {
@@ -37,135 +39,165 @@ TEST_CASE("SPI tranfsers to the correct muses address.", "[Muses72320]")
 {
 	for (Muses72320::address_t addr = 0; addr <= 0b111; addr++)
 	{
-		Muses72320 device(addr);
-		device.begin();
-		device.setAttenuationLeft(0);
+		auto device = createInitializedDevice(addr);
 
-		REQUIRE(getSPIByteCount() == 2);
-		REQUIRE(readSPINextChipAddress() == addr);
+		device.setAttenuationLeft(0);
+		auto data = MusesSPIDataReader::readBlock();
+		REQUIRE(data.chipAddress == addr);
 	}
 }
 
 TEST_CASE("Attenuation is sent on the correct select address.", "[Muses72320]")
 {
-	Muses72320 device(0);
-	device.begin();
+	auto device = createInitializedDevice();
 
 	device.setAttenuationLeft(0);
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextSelectAddressWithSkip() == 0);
+	REQUIRE(MusesSPIDataReader::readBlock().bAttenuationL);
 
 	device.setAttenuationRight(0);
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextSelectAddressWithSkip() == 0b0010'0000);
+	REQUIRE(MusesSPIDataReader::readBlock().bAttenuationR);
 }
 
 TEST_CASE("Gain is sent on the correct select address.", "[Muses72320]")
 {
-	Muses72320 device(0);
-	device.begin();
+	auto device = createInitializedDevice();
 
 	device.setGainLeft(0);
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextSelectAddressWithSkip() == 0b0001'0000);
+	REQUIRE(MusesSPIDataReader::readBlock().bGainL);
 
 	device.setGainRight(0);
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextSelectAddressWithSkip() == 0b0011'0000);
+	REQUIRE(MusesSPIDataReader::readBlock().bGainR);
 }
 
 TEST_CASE("Volume is sent with both attenuation and gain control.", "[Muses72320]")
 {
-	Muses72320 device(0);
-	device.begin();
+	auto device = createInitializedDevice();
 
-	device.setVolumeLeft(0);
-	device.setVolumeRight(0);
+	device.setVolume(0);
+	auto data = MusesSPIDataReader::readBlocks(4);
 
-	bool bAttenuationL = false;
-	bool bAttenuationR = false;
-	bool bGainL = false;
-	bool bGainR = false;
-
-	REQUIRE(getSPIByteCount() == 8);
-
-	for (size_t i = 0; i < 4; ++i) {
-		byte selectAddress = readSPINextSelectAddressWithSkip();
-
-		switch (selectAddress)
-		{
-			case 0b0000'0000: bAttenuationL = true; break;
-			case 0b0001'0000: bGainL = true; break;
-			case 0b0010'0000: bAttenuationR = true; break;
-			case 0b0011'0000: bGainR = true; break;
-			default: break;
-		}
-	}
-
-	REQUIRE(bAttenuationL);
-	REQUIRE(bAttenuationR);
-	REQUIRE(bGainL);
-	REQUIRE(bGainR);
+	REQUIRE(data.bAttenuationL);
+	REQUIRE(data.bAttenuationR);
+	REQUIRE(data.bGainL);
+	REQUIRE(data.bGainR);
 }
 
 TEST_CASE("State is sent with the correct select address.", "[Muses72320]")
 {
-	Muses72320 device(0);
-	device.begin();
+	auto device = createInitializedDevice();
 
 	device.enableAttenuationLink();
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextSelectAddressWithSkip() == 0b0100'0000);
+	REQUIRE(MusesSPIDataReader::readBlock().bState);
 }
 
 TEST_CASE("Mute data is sent correctly.", "[Muses72320]")
 {
-	Muses72320 device(0);
-	device.begin();
+	auto device = createInitializedDevice();
 
-	device.muteLeft();
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextByte() == 0);
-	REQUIRE(readSPINextSelectAddress() == 0b0000'0000);
-
-	device.muteRight();
-	REQUIRE(getSPIByteCount() == 2);
-	REQUIRE(readSPINextByte() == 0);
-	REQUIRE(readSPINextSelectAddress() == 0b0010'0000);
+	device.mute();
+	auto data = MusesSPIDataReader::readBlocks(2);
+	REQUIRE(data.bAttenuationL == true);
+	REQUIRE(data.bAttenuationR == true);
+	REQUIRE(data.attenuationL == 0);
+	REQUIRE(data.attenuationR == 0);
 }
 
-void clearSPIBytes()
+TEST_CASE("Attenuation values are sent.", "[Muses72320]")
 {
-	auto& bytes = SPI.getWrittenBytes();
-	while (!bytes.empty()) bytes.pop();
+	auto device = createInitializedDevice();
+
+	device.setAttenuation(-7);
+	auto data = MusesSPIDataReader::readBlocks(2);
+	REQUIRE(data.attenuationL == 0x17);
+	REQUIRE(data.attenuationR == 0x17);
 }
 
-byte readSPINextByte()
+TEST_CASE("Gain values are sent.", "[Muses72320]")
 {
-	auto& queue = SPI.getWrittenBytes();
-	byte value = queue.front();
-	queue.pop();
-	return value;
+	auto device = createInitializedDevice();
+
+	device.setGain(7);
+	auto data = MusesSPIDataReader::readBlocks(2);
+	REQUIRE(data.gainL == 0x7);
+	REQUIRE(data.gainR == 0x7);
 }
 
-byte readSPINextSelectAddressWithSkip()
+TEST_CASE("Volume controls 0.25dB steps.", "[Muses72320]")
 {
-	readSPINextByte();
-	return readSPINextSelectAddress();
+	auto device = createInitializedDevice();
+
+	device.setVolume(-3);
+
+	auto data = MusesSPIDataReader::readBlocks(4);
+	REQUIRE(data.attenuationL == 0b0001'0010);
+	REQUIRE(data.attenuationR == 0b0001'0010);
+	REQUIRE(data.gainL == 0b0100'0000);
+	REQUIRE(data.gainR == 0b0100'0000);
 }
 
-byte readSPINextSelectAddress()
+TEST_CASE("Zero crossing data is valid.", "[Muses72320]")
 {
-	return readSPINextByte() & 0b11110000;
+	auto device = createInitializedDevice();
+
+	device.disableZeroCrossing();
+	REQUIRE_FALSE(device.isZeroCrossingEnabled());
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b0010'0000);
+	device.enableZeroCrossing();
+	REQUIRE(device.isZeroCrossingEnabled());
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b0000'0000);
 }
 
-byte readSPINextChipAddress()
+TEST_CASE("Attenuation link data is valid.", "[Muses72320]")
 {
-	readSPINextByte();
-	return readSPINextByte() & 0b0111;
+	auto device = createInitializedDevice();
+
+	device.enableAttenuationLink();
+	REQUIRE(device.isAttenuationLinked());
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b1000'0000);
+	device.disableAttenuationLink();
+	REQUIRE_FALSE(device.isAttenuationLinked());
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b0000'0000);
 }
 
-size_t getSPIByteCount()
+TEST_CASE("Gain link data is valid.", "[Muses72320]")
 {
-	return SPI.getWrittenBytes().size();
+	auto device = createInitializedDevice();
+
+	device.enableGainLink();
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b0100'0000);
+	REQUIRE(device.isGainLinked());
+	device.disableGainLink();
+	REQUIRE(MusesSPIDataReader::readBlock().state == 0b0000'0000);
+	REQUIRE_FALSE(device.isGainLinked());
+}
+
+TEST_CASE("State is correctly combined.", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.disableZeroCrossing();
+	device.enableGainLink();
+	device.enableAttenuationLink();
+
+	REQUIRE(MusesSPIDataReader::readBlocks(3).state == 0b1110'0000);
+}
+
+TEST_CASE("Right channel is ignored when attenuation is linked.", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.enableAttenuationLink();
+	REQUIRE_NOTHROW(MusesSPIDataReader::readBlock());
+	device.setAttenuationRight(0);
+	REQUIRE_THROWS(MusesSPIDataReader::readBlock());
+}
+
+TEST_CASE("Right channel is ignored when gain is linked.", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.enableGainLink();
+	REQUIRE_NOTHROW(MusesSPIDataReader::readBlock());
+	device.setGainRight(0);
+	REQUIRE_THROWS(MusesSPIDataReader::readBlock());
 }
