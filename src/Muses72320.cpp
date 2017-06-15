@@ -29,22 +29,21 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 typedef Muses72320 Self;
 
 using namespace MusesDetails;
-using namespace MusesTypes;
 
 namespace ControlSelectAddress
 {
-	constexpr address_t ATTENUATION_L() { return 0b0000 << 4; }
-	constexpr address_t ATTENUATION_R() { return 0b0010 << 4; }
-	constexpr address_t GAIN_L() { return 0b0001 << 4; }
-	constexpr address_t GAIN_R() { return 0b0011 << 4; }
-	constexpr address_t STATE() { return 0b0100 << 4; }
+	constexpr byte attenuationL() { return 0b0000 << 4; }
+	constexpr byte attenuationR() { return 0b0010 << 4; }
+	constexpr byte gainL() { return 0b0001 << 4; }
+	constexpr byte gainR() { return 0b0011 << 4; }
+	constexpr byte state() { return 0b0100 << 4; }
 }
 
 namespace StateControlBits
 {
-	constexpr byte ZERO_CROSSING() { return 5; }
-	constexpr byte GAIN() { return 6; }
-	constexpr byte ATTENUATION() { return 7; }
+	constexpr byte zeroCrossing() { return 5; }
+	constexpr byte gain() { return 6; }
+	constexpr byte attenuation() { return 7; }
 }
 
 constexpr byte boolToByte(byte x) { return x ? HIGH : LOW; }
@@ -55,7 +54,7 @@ static byte translateStateControlData(StateControlData stateData);
 static const int s_slave_select_pin = 10;
 static const SPISettings MUSES_SPI_SETTINGS(250000, MSBFIRST, SPI_MODE2);
 
-Self::Muses72320(address_t chipAddress) :
+Self::Muses72320(byte chipAddress) :
 	chipAddress(chipAddress & 0b0111),
 	state{ true, false, false }
 { }
@@ -66,57 +65,57 @@ void Self::begin()
 	SPI.begin();
 }
 
-void Self::setVolumeLeft(volume_t volume)
+void Self::setVolumeLeft(int16_t volume)
 {
 	const auto audio = AudioControlDataConverter::fromVolume(volume);
-	transfer(ControlSelectAddress::ATTENUATION_L(), audio.getAttenuationData());
-	transfer(ControlSelectAddress::GAIN_L(), audio.getGainData());
+	transfer(ControlSelectAddress::attenuationL(), audio.getAttenuationData());
+	transfer(ControlSelectAddress::gainL(), audio.getGainData());
 }
 
-void Self::setVolumeRight(volume_t volume)
+void Self::setVolumeRight(int16_t volume)
 {
 	const auto audio = AudioControlDataConverter::fromVolume(volume);
 	if (!isAttenuationLinked())
-		transfer(ControlSelectAddress::ATTENUATION_R(), audio.getAttenuationData());
+		transfer(ControlSelectAddress::attenuationR(), audio.getAttenuationData());
 	if (!isGainLinked())
-		transfer(ControlSelectAddress::GAIN_R(), audio.getGainData());
+		transfer(ControlSelectAddress::gainR(), audio.getGainData());
 }
 
-void Self::setAttenuationLeft(volume_t attenuation)
+void Self::setAttenuationLeft(int16_t attenuation)
 {
 	const auto audio = AudioControlDataConverter::fromAttenuation(attenuation);
-	transfer(ControlSelectAddress::ATTENUATION_L(), audio.getAttenuationData());
+	transfer(ControlSelectAddress::attenuationL(), audio.getAttenuationData());
 }
 
-void Self::setAttenuationRight(volume_t attenuation)
+void Self::setAttenuationRight(int16_t attenuation)
 {
 	if (isAttenuationLinked()) return;
 	const auto audio = AudioControlDataConverter::fromAttenuation(attenuation);
-	transfer(ControlSelectAddress::ATTENUATION_R(), audio.getAttenuationData());
+	transfer(ControlSelectAddress::attenuationR(), audio.getAttenuationData());
 }
 
-void Self::setGainLeft(volume_t gain)
+void Self::setGainLeft(int16_t gain)
 {
 	const auto audio = AudioControlDataConverter::fromGain(gain);
-	transfer(ControlSelectAddress::GAIN_L(), audio.getGainData());
+	transfer(ControlSelectAddress::gainL(), audio.getGainData());
 }
 
-void Self::setGainRight(volume_t gain)
+void Self::setGainRight(int16_t gain)
 {
 	if (isGainLinked()) return;
 	const auto audio = AudioControlDataConverter::fromGain(gain);
-	transfer(ControlSelectAddress::GAIN_R(), audio.getGainData());
+	transfer(ControlSelectAddress::gainR(), audio.getGainData());
 }
 
 void Self::muteLeft()
 {
-	transfer(ControlSelectAddress::ATTENUATION_L(), 0);
+	transfer(ControlSelectAddress::attenuationL(), 0);
 }
 
 void Self::muteRight()
 {
 	if (isAttenuationLinked()) return;
-	transfer(ControlSelectAddress::ATTENUATION_R(), 0);
+	transfer(ControlSelectAddress::attenuationR(), 0);
 }
 
 void Self::enableZeroCrossing()
@@ -158,10 +157,10 @@ void Self::disableGainLink()
 void Self::transferState()
 {
 	byte data = translateStateControlData(state);
-	transfer(ControlSelectAddress::STATE(), data);
+	transfer(ControlSelectAddress::state(), data);
 }
 
-void Self::transfer(address_t selectAddress, byte data)
+void Self::transfer(byte selectAddress, byte data)
 {
 	SPI.beginTransaction(MUSES_SPI_SETTINGS);
 	digitalWrite(s_slave_select_pin, LOW);
@@ -174,9 +173,9 @@ void Self::transfer(address_t selectAddress, byte data)
 byte translateStateControlData(StateControlData stateData)
 {
 	byte data = 0;
-	bitWrite(data, StateControlBits::ZERO_CROSSING(), boolToInvertedByte(stateData.zeroCrossing));
-	bitWrite(data, StateControlBits::GAIN(), boolToByte(stateData.linkGain));
-	bitWrite(data, StateControlBits::ATTENUATION(), boolToByte(stateData.linkAttenuation));
+	bitWrite(data, StateControlBits::zeroCrossing(), boolToInvertedByte(stateData.zeroCrossing));
+	bitWrite(data, StateControlBits::gain(), boolToByte(stateData.linkGain));
+	bitWrite(data, StateControlBits::attenuation(), boolToByte(stateData.linkAttenuation));
 
 	return data;
 }

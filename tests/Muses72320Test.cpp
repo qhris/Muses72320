@@ -4,7 +4,7 @@
 #include <catch/catch.hpp>
 #include "MusesSPIDataReader.hpp"
 
-static Muses72320 createInitializedDevice(Muses72320::address_t address = 0)
+static Muses72320 createInitializedDevice(byte address = 0)
 {
 	Muses72320 device(address);
 	device.begin();
@@ -37,7 +37,7 @@ TEST_CASE("Initializing Muses also initializes the SPI library.", "[Muses72320]"
 
 TEST_CASE("SPI tranfsers to the correct muses address.", "[Muses72320]")
 {
-	for (Muses72320::address_t addr = 0; addr <= 0b111; addr++)
+	for (byte addr = 0; addr <= 0b111; addr++)
 	{
 		auto device = createInitializedDevice(addr);
 
@@ -133,6 +133,38 @@ TEST_CASE("Volume controls 0.25dB steps.", "[Muses72320]")
 	REQUIRE(data.attenuationR == 0b0001'0010);
 	REQUIRE(data.gainL == 0b0100'0000);
 	REQUIRE(data.gainR == 0b0100'0000);
+}
+
+TEST_CASE("Can set loweset attenuation", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.setAttenuation(-223);
+	auto data = MusesSPIDataReader::readBlocks(2);
+	REQUIRE(data.attenuationL == 0b1110'1111);
+	REQUIRE(data.attenuationR == 0b1110'1111);
+}
+
+TEST_CASE("Can set highest gain.", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.setGain(63);
+	auto data = MusesSPIDataReader::readBlocks(2);
+	REQUIRE(data.gainL == 0b0011'1111);
+	REQUIRE(data.gainR == 0b0011'1111);
+}
+
+TEST_CASE("Can set lowest volume.", "[Muses72320]")
+{
+	auto device = createInitializedDevice();
+
+	device.setVolume(-446);
+	auto data = MusesSPIDataReader::readBlocks(4);
+	REQUIRE(data.attenuationL == 0b1110'1111);
+	REQUIRE(data.attenuationR == 0b1110'1111);
+	REQUIRE(data.gainL == 0);
+	REQUIRE(data.gainR == 0);
 }
 
 TEST_CASE("Zero crossing data is valid.", "[Muses72320]")

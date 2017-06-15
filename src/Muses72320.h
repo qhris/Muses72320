@@ -24,15 +24,12 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define INCLUDED_MUSES_72320
 
 #include <Arduino.h>
-#include "MusesTypes.h"
+#include "utility/MusesDetails.hpp"
 
 class Muses72320
 {
 public:
-	using volume_t = MusesTypes::volume_t;
-	using address_t = MusesTypes::address_t;
-
-	Muses72320(address_t chipAddress);
+	Muses72320(byte chipAddress);
 
 	/**
 	 * Initializes the pin modes to enable communication with the chip.
@@ -54,14 +51,14 @@ public:
 	 * Input of -105: -0.25 * 105 =  -26.25dB
 	 * Input of -446: -0.25 * 446 = -111.50dB [Minimum volume]
 	 */
-	void setVolume(volume_t volume)
+	void setVolume(int16_t volume)
 	{
 		setVolumeLeft(volume);
 		setVolumeRight(volume);
 	}
 
-	void setVolumeLeft(volume_t volume);
-	void setVolumeRight(volume_t volume);
+	void setVolumeLeft(int16_t volume);
+	void setVolumeRight(int16_t volume);
 
 	/**
 	 * Direct attenuation control of the chip only allowing 0.5dB steps.
@@ -75,14 +72,14 @@ public:
 	 * Input of -103: 0.5 * -100 =  -51.5dB
 	 * Input of -223: 0.5 * -223 = -111.5dB [Minumum volume/Max atenuation].
 	 */
-	void setAttenuation(volume_t attenuation)
+	void setAttenuation(int16_t attenuation)
 	{
 		setAttenuationLeft(attenuation);
 		setAttenuationRight(attenuation);
 	}
 
-	void setAttenuationLeft(volume_t attenuation);
-	void setAttenuationRight(volume_t attenuation);
+	void setAttenuationLeft(int16_t attenuation);
+	void setAttenuationRight(int16_t attenuation);
 
 	/**
 	 * Direct gain control of the chip with 0.5dB precision.
@@ -96,14 +93,14 @@ public:
 	 * Input of 31: 0.5 * 31 = 15.5dB
 	 * Input of 63: 0.5 * 63 = 31.5dB [Maximum gain.]
 	 */
-	void setGain(volume_t gain)
+	void setGain(int16_t gain)
 	{
 		setGainLeft(gain);
 		setGainRight(gain);
 	}
 
-	void setGainLeft(volume_t gain);
-	void setGainRight(volume_t gain);
+	void setGainLeft(int16_t gain);
+	void setGainRight(int16_t gain);
 
 	/**
 	 * Mute channels.
@@ -143,10 +140,10 @@ public:
 
 private:
 	void transferState();
-	void transfer(address_t selectAddress, byte data);
+	void transfer(byte selectAddress, byte data);
 
 private:
-	address_t chipAddress;
+	byte chipAddress;
 	MusesDetails::StateControlData state;
 };
 

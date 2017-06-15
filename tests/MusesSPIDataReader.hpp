@@ -11,7 +11,7 @@ struct MusesSPIData
 	bool bGainR;
 	bool bState;
 
-	Muses72320::address_t chipAddress;
+	byte chipAddress;
 
 	byte attenuationL = 0;
 	byte attenuationR = 0;
