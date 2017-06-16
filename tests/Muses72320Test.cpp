@@ -47,6 +47,18 @@ TEST_CASE("SPI tranfsers to the correct muses address.", "[Muses72320]")
 	}
 }
 
+TEST_CASE("Can selec a different slave select pin", "[Muses72320]")
+{
+	const byte customSS = 5;
+	Muses72320 device(0, customSS);
+
+	REQUIRE(digitalRead(customSS) == LOW);
+
+	device.begin();
+	REQUIRE(mockReadPinMode(customSS) == OUTPUT);
+	REQUIRE(digitalRead(customSS) == HIGH);
+}
+
 TEST_CASE("Attenuation is sent on the correct select address.", "[Muses72320]")
 {
 	auto device = createInitializedDevice();

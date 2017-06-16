@@ -51,17 +51,19 @@ constexpr byte boolToInvertedByte(byte x) { return x ? LOW : HIGH; }
 
 static byte translateStateControlData(StateControlData stateData);
 
-static const int s_slave_select_pin = 10;
 static const SPISettings MUSES_SPI_SETTINGS(250000, MSBFIRST, SPI_MODE2);
 
-Self::Muses72320(byte chipAddress) :
+Self::Muses72320(byte chipAddress, byte slaveSelectPin) :
 	chipAddress(chipAddress & 0b0111),
+	slaveSelectPin(slaveSelectPin),
 	state{ true, false, false }
 { }
 
 void Self::begin()
 {
-	pinMode(s_slave_select_pin, OUTPUT);
+	digitalWrite(slaveSelectPin, HIGH);
+	pinMode(slaveSelectPin, OUTPUT);
+
 	SPI.begin();
 }
 
@@ -163,10 +165,10 @@ void Self::transferState()
 void Self::transfer(byte selectAddress, byte data)
 {
 	SPI.beginTransaction(MUSES_SPI_SETTINGS);
-	digitalWrite(s_slave_select_pin, LOW);
+	digitalWrite(slaveSelectPin, LOW);
 	SPI.transfer(data);
 	SPI.transfer(selectAddress | chipAddress);
-	digitalWrite(s_slave_select_pin, HIGH);
+	digitalWrite(slaveSelectPin, HIGH);
 	SPI.endTransaction();
 }
 

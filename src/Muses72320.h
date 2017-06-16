@@ -29,7 +29,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 class Muses72320
 {
 public:
-	Muses72320(byte chipAddress);
+	Muses72320(byte chipAddress) : Muses72320(chipAddress, SS) {}
+	Muses72320(byte chipAddress, byte slaveSelectPin);
 
 	/**
 	 * Initializes the pin modes to enable communication with the chip.
@@ -144,6 +145,7 @@ private:
 
 private:
 	byte chipAddress;
+	byte slaveSelectPin;
 	MusesDetails::StateControlData state;
 };
 
