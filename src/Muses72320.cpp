@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 #include "utility/AudioControlData.hpp"
 #include "utility/AudioControlDataConverter.hpp"
+#include "utility/SPITransactionalWriter.hpp"
 #include "Muses72320.h"
 
 #include <SPI.h>
@@ -164,12 +165,8 @@ void Self::transferState()
 
 void Self::transfer(byte selectAddress, byte data)
 {
-	SPI.beginTransaction(MUSES_SPI_SETTINGS);
-	digitalWrite(slaveSelectPin, LOW);
-	SPI.transfer(data);
-	SPI.transfer(selectAddress | chipAddress);
-	digitalWrite(slaveSelectPin, HIGH);
-	SPI.endTransaction();
+	SPITransactionalWriter writer(MUSES_SPI_SETTINGS, slaveSelectPin);
+	writer.write(chipAddress, selectAddress, data);
 }
 
 byte translateStateControlData(StateControlData stateData)
